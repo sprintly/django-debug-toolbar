@@ -1,0 +1,16 @@
+Source: python-django-debug-toolbar
+Section: python
+Priority: extra
+Maintainer: Joe Stump <joe@joestump.net>
+Build-Depends: cdbs, debhelper (>= 6), python (>= 2.5), python-support, python-setuptools
+Standards-Version: 3.8.3
+Homepage: https://github.com/sprintly/django-debug-toolbar
+
+Package: python-django-debug-toolbar
+Architecture: all
+Depends: ${shlibs:Depends}, ${misc:Depends}, python (>= 2.5), python-django (>= 1.1.0)
+Description: The Django Debug Toolbar is a 
+ configurable set of panels that display 
+ various debug information about the current 
+ request/response and when clicked, display 
+ more details about the panel's content.
