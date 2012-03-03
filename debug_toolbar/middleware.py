@@ -13,7 +13,10 @@ from django.utils.importlib import import_module
 import debug_toolbar.urls
 from debug_toolbar.toolbar.loader import DebugToolbar
 
-_HTML_TYPES = ('text/html', 'application/xhtml+xml')
+_CONTENT_HANDLERS = {
+    'text/html': '_append_html',
+    'application/xhtml+xml': '_append_html',
+}
 
 
 def replace_insensitive(string, target, replacement):
@@ -27,6 +30,10 @@ def replace_insensitive(string, target, replacement):
         return string[:index] + replacement + string[index + len(target):]
     else:  # no results so return the original string
         return string
+
+
+def add_content_handler(mime_type, handler):
+    _CONTENT_HANDLERS[mime_type] = handler
 
 
 class DebugToolbarMiddleware(object):
@@ -123,15 +130,25 @@ class DebugToolbarMiddleware(object):
                     {'redirect_to': redirect_to}
                 )
                 response.cookies = cookies
+
+        mime_type = response.get('Content-Type', '').split(';')[0]
         if 'gzip' not in response.get('Content-Encoding', '') and \
-           response.get('Content-Type', '').split(';')[0] in _HTML_TYPES:
+           mime_type in _CONTENT_HANDLERS:
             for panel in toolbar.panels:
                 panel.process_response(request, response)
-            response.content = replace_insensitive(
-                smart_unicode(response.content),
-                self.tag,
-                smart_unicode(toolbar.render_toolbar() + self.tag))
+            try:
+                handler = getattr(self, _CONTENT_HANDLERS[mime_type])
+                response = handler(response, toolbar)
+            except AttributeError:
+                pass
             if response.get('Content-Length', None):
                 response['Content-Length'] = len(response.content)
         del self.__class__.debug_toolbars[ident]
+        return response
+
+    def _append_html(self, response, toolbar):
+        response.content = replace_insensitive(
+            smart_unicode(response.content),
+            self.tag,
+            smart_unicode(toolbar.render_toolbar() + self.tag))
         return response
