@@ -13,10 +13,7 @@ from django.utils.importlib import import_module
 import debug_toolbar.urls
 from debug_toolbar.toolbar.loader import DebugToolbar
 
-_CONTENT_HANDLERS = {
-    'text/html': '_append_html',
-    'application/xhtml+xml': '_append_html',
-}
+_CONTENT_HANDLERS = {}
 
 
 def replace_insensitive(string, target, replacement):
@@ -32,8 +29,12 @@ def replace_insensitive(string, target, replacement):
         return string
 
 
-def add_content_handler(mime_type, handler):
-    _CONTENT_HANDLERS[mime_type] = handler
+def add_content_handler(handler, mime_type):
+    if isinstance(mime_type, list):
+        for m in mime_type:
+            _CONTENT_HANDLERS[m] = handler
+    else:
+        _CONTENT_HANDLERS[mime_type] = handler
 
 
 class DebugToolbarMiddleware(object):
@@ -152,3 +153,6 @@ class DebugToolbarMiddleware(object):
             self.tag,
             smart_unicode(toolbar.render_toolbar() + self.tag))
         return response
+
+
+add_content_handler('_append_html', ['text/html', 'application/xhtml+xml'])
